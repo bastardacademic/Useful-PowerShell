@@ -1,1 +1,0 @@
-Get-ADUser -Filter * -SearchBase "OU=Users,DC=ad,DC=fsdomain,DC=local" -Properties * | Select-Object name | export-csv -path c:\scripts\userexport.csv
