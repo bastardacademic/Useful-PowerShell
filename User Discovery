@@ -1,0 +1,89 @@
+#Syntax of PowerShell User List are given below:
+
+#Get-LocalUser syntax:
+
+Get-LocalUser
+[[-Name] <String[]>] [<CommonParameters>] Get-LocalUser
+[[-SID] <SecurityIdentifier[]>] [<CommonParameters>]
+
+#Get-ADUser syntax:
+
+Get-ADUser
+[-AuthType <ADAuthType>] [-Credential <PSCredential>] -Filter <String>
+[-Properties <String[]>] [-ResultPageSize <Int32>] [-ResultSetSize <Int32>] [-SearchBase <String>] [-SearchScope <ADSearchScope>] [-Server <String>] [<CommonParameters>]
+
+Get-ADUser
+[-AuthType <ADAuthType>] [-Credential <PSCredential>] [-Identity] <ADUser>
+[-Partition <String>] [-Properties <String[]>] [-Server <String>] [<CommonParameters>]
+
+Get-ADUser
+[-AuthType <ADAuthType>] [-Credential <PSCredential>] -LDAPFilter <String>
+[-Properties <String[]>] [-ResultPageSize <Int32>] [-ResultSetSize <Int32>] [-SearchBase <String>] [-SearchScope <ADSearchScope>] [-Server <String>] [<CommonParameters>]
+
+#How to List Users in PowerShell?
+#There are various methods to list the users in the PowerShell by using the Native commands like Get-LocalUser which retrieves the local user account details from the local computer or the remote computers or the Get-ADUser which retrieves the users from the Active Directory domain.
+
+#Examples of PowerShell User List
+
+#Example #1: Getting Local User Accounts List Using Cmd
+
+net user
+
+#To get the local users list from the remote computer use Invoke-Command in PowerShell,
+Invoke-Command -ComputerName LabMachine2k16 -ScriptBlock { net user}
+
+#Example #2: Retrieving the Local Users Using the Wmi Method
+#We can use the WMI method or the CIM instance method class Win32_UserAccount to retrieve the user list.
+
+gwmi win32_UserAccount | Select Name, FullName, Caption, Domain, SID | ft -AutoSize
+
+#To get the local user details on the remote computer, you need to add the -ComputerName
+
+Invoke-Command -ComputerName LabMachine2k16 { gwmi win32_UserAccount} | Select Name, FullName, Caption, Domain, SID | ft -AutoSize
+
+gwmi win32_UserAccount | Select Name, FullName, Caption, Domain, SID | Export-Csv C:\Temp\Useracccounts.csv -NoTypeInformation
+
+#To export into the text file.
+
+gwmi win32_UserAccount | Select Name, FullName, Caption, Domain, SID | Out-File C:\temp\UserAccounts.txt
+
+#If you want to check the specific user or the domain user list,
+
+ gwmi win32_UserAccount | where{$_.Domain -like "LabMachine2k16*"} | Select Name, FullName, Caption, Domain, SID  | ft -AutoSize
+
+#To retrieve the local accounts only with the Password properties use the below command,
+gwmi win32_useraccount | where{$_.LocalAccount -eq $true}  | Select Name, LocalAccount, PasswordChangeable, PasswordRequired
+
+#Example #3: Retrieving the ADUsers List
+
+Get-ADUser -Filter *
+
+#To expose all the properties of the users, you can use the -Property
+
+Get-ADUser -Filter * -Properties *
+
+#To filter the specific properties,
+
+Get-ADUser -Filter * -Properties * | Select Name, DisplayName, SamAccountName, UserPrincipalName
+
+#To get the list of the users who have accounts Disabled and export it to the CSV file, use the below command.
+
+Get-ADUser -Filter * | where {$_.Enabled -eq $false} | Export-Csv C:\DisabledUserAccounts.csv -NoTypeInformation
+
+#To get the specific user accounts details,
+
+Get-ADUser -Identity beta -Properties *
+
+#You need to use the SamAccountName property in the -Identity parameter.
+
+#To retrieve the users from the specific Organization Unit (OU), use the below command.
+
+Get-ADUser -Filter * -Properties * | where{$_.DistinguishedName -like "*CN=Users*"} | Select Name, DisplayName, userPrincipalName, SAMAccountName
+
+#Retrieves the Expired Password user accounts.
+
+Get-ADUser -Filter * -Properties * | where{$_.PasswordExpired -eq $true} | Select Name, SAMAccountName, PasswordExpired, PasswordLastSet
+
+#Retrieves the Password never expires user accounts.
+
+Get-ADUser -Filter * -Properties * | where{$_.PasswordNeverExpires -eq $true} | Select Name, SAMAccountName, PasswordNeverExpires
