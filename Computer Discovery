@@ -1,0 +1,25 @@
+
+#Import-Module ActiveDirectory
+
+#Get-ADComputer -Filter * -Properties * |
+Select -Property Name,DNSHostName,Enabled,LastLogonDate
+
+#Export all AD Computers to CSV file
+Get-ADComputer -Filter * -Properties * |
+ Select -Property Name,DNSHostName,Enabled,LastLogonDate | 
+ Export-CSV "C:\AllComputers.csv" -NoTypeInformation -Encoding UTF8
+
+#Get all computers in OU
+Get-ADComputer -Filter * -SearchBase "OU=TestOU,DC=TestDomain,DC=com" -Properties *  |
+ Select -Property Name,DNSHostName,Enabled,LastLogonDate | 
+ Export-CSV "C:\AllComputersInOU.csv" -NoTypeInformation -Encoding UTF8
+
+#Apply SQL Like filter to get specific computers
+Get-ADComputer -Filter 'operatingSystem -like "*Windows 7*"' -Properties * |
+ Select -Property Name,DNSHostName,operatingSystem,LastLogonDate | 
+ Export-CSV "C:\Windows7Computers.csv" -NoTypeInformation -Encoding UTF8
+
+#Apply LDAP Filter to get specific computers
+Get-ADComputer -LDAPFilter '(operatingSystem=*Windows 7*)'  -Properties * |
+ Select -Property Name,DNSHostName,operatingSystem,LastLogonDate | 
+ Export-CSV "C:\Windows7Computers.csv" -NoTypeInformation -Encoding UTF8
