@@ -43,6 +43,10 @@ Invoke-Command -ComputerName LabMachine2k16 { gwmi win32_UserAccount} | Select N
 
 gwmi win32_UserAccount | Select Name, FullName, Caption, Domain, SID | Export-Csv C:\Temp\Useracccounts.csv -NoTypeInformation
 
+#To find only active accounts
+
+Get-ADUser -Filter * | where {$_.Enabled -ne $false} | Export-Csv C:\UserAccounts.csv -NoTypeInformation
+
 #To export into the text file.
 
 gwmi win32_UserAccount | Select Name, FullName, Caption, Domain, SID | Out-File C:\temp\UserAccounts.txt
