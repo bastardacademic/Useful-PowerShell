@@ -1,0 +1,10 @@
+#Incident Response Automation:
+#Scan for malware:
+
+Start-MpWDOScan -ScanType QuickScan
+
+#Collect system information:
+
+Get-ComputerInfo
+
+
