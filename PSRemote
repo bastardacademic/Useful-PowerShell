@@ -1,0 +1,14 @@
+#PowerShell Remoting:
+#Configure PowerShell remoting to remotely manage systems:
+
+# Enable WinRM
+Enable-PSRemoting -Force
+
+# Configure trusted hosts
+Set-Item wsman:\localhost\Client\TrustedHosts -Value "server01,server02" -Force
+
+# Connect to remote system
+$session = New-PSSession -ComputerName server01 -Credential domain\username
+
+# Run command on remote system
+Invoke-Command -Session $session -ScriptBlock { Get-Process }
