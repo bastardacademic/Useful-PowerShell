@@ -1,0 +1,18 @@
+#Automated Security Baseline Enforcement:
+#Use Microsoft's Security Compliance Toolkit to automate the application of security baselines:
+
+$baseline = "Windows 10 1909 and Windows Server 1909 Security Baseline.zip"
+$gpo = "Security Baseline GPO"
+
+# Extract baseline files
+Expand-Archive $baseline -DestinationPath C:\SecurityBaseline
+
+# Import group policy settings
+Import-Csv C:\SecurityBaseline\GPOSettings.csv | ForEach-Object {
+    Set-GPRegistryValue -Name $gpo -Key $_.KeyPath -ValueName $_.ValueName -Type $_.ValueType -Value $_.ValueData -ErrorAction SilentlyContinue
+}
+
+# Apply group policy settings
+Invoke-GPUpdate -Computer localhost -Force
+
+
