@@ -1,0 +1,13 @@
+#User Account Management:
+#Create a new user:
+
+New-LocalUser -Name "username" -FullName "User Name" -Description "User description" -Password (ConvertTo-SecureString "Pa$$w0rd" -AsPlainText -Force)
+
+#Delete a user:
+
+Remove-LocalUser -Name "username"
+
+#Query users:
+
+Get-LocalUser
+
