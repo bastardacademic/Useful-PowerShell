@@ -1,0 +1,70 @@
+#Enforce Strong Password Policies:
+#The following script can be used to set a strong password policy for Active Directory:
+
+Set-ADDefaultDomainPasswordPolicy -ComplexityEnabled $true -MinPasswordLength 8 -PasswordHistoryCount 5 -MaxPasswordAge "90.00:00:00"
+
+#Audit Active Directory Security Events:
+#The following script can be used to audit security events in Active Directory:
+
+Get-EventLog -LogName Security -Source Microsoft-Windows-Security-Auditing | Where-Object {$_.EventID -in 1102, 4720, 4722, 4725, 4726, 4738, 4740, 4741, 4742, 4743, 4744, 4745, 4746, 4747, 4748, 4749, 4750, 4751, 4752, 4753, 4754, 4755, 4756, 4757, 4758, 4759, 4760, 4761, 4762, 4763, 4764, 4765, 4766, 4767, 4768, 4769, 4770, 4771, 4772, 4774, 4775, 4776, 4777, 4778, 4779, 4780, 4781, 4782, 4783, 4784, 4785, 4786, 4787, 4788, 4789, 4790, 4791, 4792, 4793, 4794, 4795, 4796, 4797, 4798, 4799, 4800, 4801, 4802, 4803, 4804, 4805, 4806, 4807, 4808, 4809, 4810, 4811, 4812, 4813, 4814, 4815, 4816, 4817, 4818, 4819, 4820, 4821, 4822, 4823, 4824, 4825, 4826, 4827, 4828, 4829, 4830, 4831, 4832, 4833, 4834, 4835, 4836, 4837, 4838, 4839, 4840, 4841, 4842, 4843, 4844, 4845, 4846, 4847, 4848, 4849, 4850, 4851, 4852, 4853, 4854, 4855, 4856, 4857, 4858, 4859, 4860, 4861, 4862, 4863, 4864, 4865, 4866, 4867, 4868, 4869, 4870, 4871, 4872, 4873, 4874, 4875, 4876, 4877, 4878, 4879, 
+
+#Disable Unused Accounts:
+#The following script can be used to disable unused user accounts in Active Directory:
+
+$daysInactive = 90
+$timeInactive = (Get-Date).Adddays(-($daysInactive))
+Get-ADUser -Filter {Enabled -eq $True -and LastLogonTimestamp -lt $timeInactive} | Disable-ADAccount
+
+#Enable Active Directory Auditing:
+#The following script can be used to enable auditing of Active Directory:
+
+$domain = "domain.com"
+$DC = Get-ADDomainController -DomainName $domain
+Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Services\NTDS\Parameters" -Name "Audit Incoming RPC Traffic" -Value 1
+Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Services\NTDS\Parameters" -Name "Audit Account Management" -Value 3
+Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Services\NTDS\Parameters" -Name "Audit Directory Service Access" -Value 3
+Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Services\NTDS\Parameters" -Name "Audit Directory Service Changes" -Value 3
+Set-ItemProperty -Path "HKLM:\System\CurrentControlSet\Services\NTDS\Parameters" -Name "Audit Directory Service Replication" -Value 3
+Restart-Service -Name NTDS -Force -ComputerName $DC.HostName
+
+#Restrict Domain Controller Logon Access:
+#The following script can be used to restrict logon access to domain controllers in Active Directory:
+
+$domain = "domain.com"
+$groupDN = (Get-ADDomain -Identity $domain).DomainControllersContainer
+$groupCN = $groupDN.Split(',')[0].Substring(3)
+$denyRule = New-Object System.DirectoryServices.ActiveDirectoryAccessRule("NT AUTHORITY\Authenticated Users","GenericRead","Deny","Descendents",$groupCN)
+$acl = Get-Acl "AD:\$groupDN"
+$acl.AddAccessRule($denyRule)
+Set-Acl "AD:\$groupDN" $acl
+#This command creates a Deny rule for the Authenticated Users group for the GenericRead permission on the domain controllers container. This restricts logon access to the domain controllers container to only administrators.
+
+#Enforce Password Policies:
+#The following script can be used to enforce password policies in Active Directory:
+
+$domain = "domain.com"
+$policy = Get-ADDefaultDomainPasswordPolicy -Identity $domain
+Set-ADDefaultDomainPasswordPolicy -Identity $policy -ComplexityEnabled $true -LockoutDuration "0.00:30:00" -LockoutObservationWindow "0.00:15:00" -LockoutThreshold 5 -MaxPasswordAge "90.00:00:00" -MinPasswordAge "1.00:00:00" -MinPasswordLength 8 -PasswordHistoryCount 5
+
+#Secure DNS:
+#The following script can be used to secure DNS in Active Directory:
+
+$dnsServer = "dns.domain.com"
+$zone = "domain.com"
+$DC = Get-ADDomainController -DomainName $zone
+$dnsRecord = Get-DnsServerResourceRecord -ZoneName $zone -Name $DC.HostName -RRType A
+$dnsRecord.SecurityDescriptor = (Get-Acl -Path $dnsRecord.PsPath).Sddl
+$dnsRecord.SecurityDescriptor.SetAccessRuleProtection($true,$false)
+$dnsRecord.SecurityDescriptor.AddAccessRule((New-Object System.Security.AccessControl.FileSystemAccessRule("Authenticated Users","ReadAndExecute","Allow")))
+Set-DnsServerResourceRecord -NewInputObject $dnsRecord -ZoneName $zone -PassThru
+
+#Restrict Unnecessary Services:
+#The following script can be used to restrict unnecessary services in Active Directory:
+
+$services = "Netlogon", "LanmanServer", "LanmanWorkstation", "RemoteRegistry"
+foreach ($service in $services) {
+    Set-Service -Name $service -StartupType Disabled
+    Stop-Service -Name $service -Force
+}
+
+#This command restricts unnecessary services in Active Directory by disabling them and stopping them from running. You can customize the $services variable to include or exclude specific services based on your needs.
