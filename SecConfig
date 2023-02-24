@@ -1,0 +1,14 @@
+#PowerShell Script Hardening:
+#Enforce script execution policy to restrict the types of scripts that can be run:
+
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+#Security Configuration Management:
+#Configure firewall settings:
+
+New-NetFirewallRule -DisplayName "Block incoming connections" -Direction Inbound -Action Block
+
+#Enforce password policy:
+
+Set-LocalUser -Name "username" -PasswordNeverExpires $true -PasswordNotRequired $false -Password (ConvertTo-SecureString "Pa$$w0rd" -AsPlainText -Force)
+
