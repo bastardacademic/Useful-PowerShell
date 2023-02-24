@@ -1,0 +1,9 @@
+#Patch Management:
+#Check for missing patches:
+
+Get-HotFix
+
+#Install missing patches:
+
+Install-WindowsUpdate
+
