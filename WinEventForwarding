@@ -1,0 +1,18 @@
+#Windows Event Forwarding:
+#Configure a server to forward specific events to a central Windows Event Collector:
+
+$server = "server01"
+$wevtutil = "C:\Windows\System32\wevtutil.exe"
+$channel = "Security"
+$destination = "server02"
+
+# Configure subscription
+$subscriptionName = "SecurityEvents"
+$subscriptionQuery = "*[System[(EventID=4624)]]"
+$subscriptionCmd = "$wevtutil im $subscriptionQuery /q:$channel /rf:$server /u:domain\username /p:password"
+Invoke-Expression $subscriptionCmd
+
+# Configure forwarding
+$forwardingCmd = "$wevtutil sl $channel /ca:O:$destination /u:domain\username /p:password"
+Invoke-Expression $forwardingCmd
+
