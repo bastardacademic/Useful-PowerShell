@@ -1,0 +1,9 @@
+#Network Monitoring:
+#Monitor network connections:
+
+Get-NetTCPConnection -State Established
+
+#Identify rogue devices:
+
+Get-NetNeighbor | Where-Object State -EQ "Incomplete"
+
