@@ -1,0 +1,13 @@
+#Threat Hunting:
+#Analyze network traffic:
+
+Get-NetAdapterStatistics
+
+#Identify suspicious files or activity:
+
+Get-Process -IncludeUserName | Where-Object UserName -NotMatch "NT AUTHORITY"
+
+#Gather threat intelligence:
+
+Invoke-WebRequest -Uri "https://example.com/threatfeed.txt" | Select-String -Pattern "malware"
+
