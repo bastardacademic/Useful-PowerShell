@@ -1,0 +1,9 @@
+#System Inventory:
+#List installed software:
+
+Get-ItemProperty HKLM:\Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Uninstall\* | Select-Object DisplayName, DisplayVersion, Publisher, 
+InstallDate | Format-Table -AutoSize
+
+#List hardware information:
+
+Get-WmiObject -Class Win32_ComputerSystem | Select-Object Manufacturer, Model, TotalPhysicalMemory, NumberOfProcessors
