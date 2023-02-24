@@ -1,0 +1,14 @@
+#IIS User Logging
+
+$startDate = (Get-Date).AddHours(-12)
+$logPath = "C:\inetpub\logs\LogFiles\W3SVC1\u_ex*.log" # Change the log path according to your setup
+
+Get-WebConnectionLog -LogPath $logPath | 
+    Where-Object { $_.time -gt $startDate } |
+    Select-Object time, csusername, cip, csuseragent
+
+#This script will retrieve the connection log from the specified log path and filter it to only include records from the previous 12 hours. 
+#The output will include the time of the connection, the username (if authenticated), the IP address, and the user agent (browser) used for each connection. 
+#You can modify the Select-Object line to include other fields as needed.
+#Note that this script assumes that the IIS logging format is set to the default W3C format. 
+#If your IIS server is using a different logging format, you may need to adjust the script accordingly.
