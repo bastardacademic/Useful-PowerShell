@@ -1,0 +1,28 @@
+#PowerShell Script Logging:
+#Configure PowerShell script logging to record script execution events:
+
+# Configure log settings
+$LogPath = "C:\PowerShellLogs"
+$LogName = "PowerShellExecution.log"
+$LogEnabled = $true
+$LogLevel = "Verbose"
+
+# Create log directory if it doesn't exist
+If(!(Test-Path $LogPath)){
+    New-Item -Path $LogPath -ItemType Directory
+}
+
+# Configure logging
+$LogParameters = @{
+    Path = "$LogPath\$LogName"
+    Force = $true
+    Append = $true
+    InformationAction = "Continue"
+    WarningAction = "Continue"
+    ErrorAction = "Continue"
+    Debug = $LogEnabled
+    Verbose = $LogEnabled
+}
+
+# Start logging
+Start-Transcript @LogParameters
