@@ -1,0 +1,5 @@
+#Vulnerability Scanning:
+#Scan for vulnerabilities using the PowerShell script provided by the Microsoft Security Compliance Toolkit:
+
+.\BaselineSecurityAnalyzer_x64.msi /quiet /norestart /l*v c:\BSA.log
+
