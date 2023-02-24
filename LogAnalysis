@@ -1,0 +1,5 @@
+#Log Analysis:
+#Filter event logs by source and time:
+
+Get-EventLog -LogName Security -After "02/01/2023 00:00:00" -Before "02/24/2023 23:59:59" -Source "Microsoft Windows security auditing" | Format-Table TimeGenerated, EntryType, Source, EventID, Message -AutoSize
+
