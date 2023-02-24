@@ -1,0 +1,56 @@
+#Enable Azure Active Directory Privileged Identity Management (PIM):
+#The following script can be used to enable Azure Active Directory Privileged Identity Management (PIM):
+
+Connect-AzureAD
+$roleId = (Get-AzureADDirectoryRole | Where-Object {$_.DisplayName -eq 'Privileged Role Administrator'}).ObjectID
+$PIMPolicy = New-AzureADMSPrivilegedIdentityManagementPolicy -AzureRBACRoleDefinitionId $roleId -AssignmentDurationInMinutes 30 -ScheduleType "Once"
+Set-AzureADMSPrivilegedIdentityManagementPolicy -Id $PIMPolicy.Id -Description "Privileged Identity Management Policy for Role Administrators"
+#This command enables PIM for Azure AD role administrators by creating a new PIM policy and setting the assignment duration and schedule t
+
+#Restrict Access to Azure AD:
+#The following script can be used to restrict access to Azure AD:
+
+Connect-AzureAD
+$objectId = (Get-AzureADServicePrincipal -Filter "AppId eq '00000002-0000-0000-c000-000000000000'").ObjectId
+Set-AzureADServicePrincipal -ObjectId $objectId -AccountEnabled $false
+#This command restricts access to Azure AD by disabling the Azure AD service principal, which is the identity used by Azure AD to access resources.
+
+#Enforce Multi-Factor Authentication (MFA):
+#The following script can be used to enforce MFA for Azure AD users:
+
+Connect-AzureAD
+$groupId = (Get-AzureADDirectoryRole | Where-Object {$_.DisplayName -eq 'Authentication Administrator'}).ObjectId
+$users = Get-AzureADGroupMember -ObjectId $groupId | Where-Object {$_.ObjectType -eq 'User'}
+foreach ($user in $users) {
+    Set-AzureADUser -ObjectId $user.ObjectId -StrongAuthenticationRequirements @(@{RelyingParty="*"; State="Enabled"; VerificationMethod="PhoneAppNotification"})
+}
+
+#Audit Azure AD Sign-Ins:
+#The following script can be used to audit Azure AD sign-ins:
+
+Connect-AzureAD
+$auditPolicy = New-AzureADAuditPolicy -Category SignInLogs -RetentionDuration 90 -Enabled $true
+Set-AzureADAuditPolicy -Id $auditPolicy.Id
+#This command audits Azure AD sign-ins by creating a new audit policy for sign-in logs and enabling it with a retention duration of 90 days.
+
+#Enable Conditional Access:
+#The following script can be used to enable conditional access policies in Azure Active Directory:
+
+Connect-AzureAD
+$policy = New-AzureADPolicy -Definition @('{ "DisplayName": "Require MFA for All Users", "IsOrganizationDefault": false, "Conditions": { "SignInRiskLevels": [ "High", "Medium" ] }, "GrantControls": { "Operator": "OR", "BuiltInControls": [ "BlockAccess", "Mfa", "CompliantDevice" ] }, "SessionControls": { "ApplicationMode": "All", "PersistentBrowser": "Disabled", "WebBrowserCookieMode": "None" } }') -Type "ConditionalAccess"
+
+
+#Enable Role-Based Access Control (RBAC):
+#The following script can be used to enable role-based access control (RBAC) in Azure Active Directory:
+
+Connect-AzureAD
+$roleDefinition = New-AzureADMSRoleDefinition -DisplayName "Resource Group Contributor" -Description "Can manage all resources in a resource group" -Permissions "*/read", "Microsoft.Authorization/*/read", "Microsoft.Resources/deployments/*"
+$roleAssignment = New-AzureADMSRoleAssignment -RoleDefinitionId $roleDefinition.Id -PrincipalId "user@example.com" -ResourceScope "/" -ScopeType "Global"
+
+
+#Restrict Access to Azure AD Admin Portal:
+The following script can be used to restrict access to the Azure AD admin portal:
+
+Connect-AzureAD
+$servicePrincipal = Get-AzureADServicePrincipal -Filter "DisplayName eq 'Windows Azure Active Directory'"
+$servicePrincipal.AppRoles | Where-Object { $_.Value -eq 'User.ReadWrite.All' } | ForEach-Object { Revoke-AzureADServiceAppRoleAssignment -ObjectId $servicePrincipal.ObjectId -Id $_.Id -ResourceId $servicePrincipal.ObjectId }
