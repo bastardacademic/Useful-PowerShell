@@ -12,3 +12,34 @@ Get-WebConnectionLog -LogPath $logPath |
 #You can modify the Select-Object line to include other fields as needed.
 #Note that this script assumes that the IIS logging format is set to the default W3C format. 
 #If your IIS server is using a different logging format, you may need to adjust the script accordingly.
+
+
+Alt method:
+
+Get-ChildItem -Path .\W3SVC* -Recurse -Include "*.log" |
+    Where-Object {$_.LastWriteTime -gt (Get-Date).AddHours(-12)} |
+    ForEach-Object { Get-Content $_.FullName } |
+    Select-String '^\S+ \S+ \S+ \[\S+ [+-]\d{4}\] "[^"]+" \d+ \d+ "[^"]+" "[^"]+"$' |
+    ForEach-Object {
+        $fields = $_ -split ' '
+        $ip = $fields[2]
+        $date = [datetime]::ParseExact($fields[3], 'dd/MMM/yyyy:HH:mm:ss', $null)
+        $status = [int]$fields[8]
+        $substatus = [int]$fields[9]
+        $method = $fields[5]
+        $uri = $fields[6]
+        $bytesSent = [long]$fields[10]
+        $bytesReceived = [long]$fields[11]
+        $userAgent = $_.Substring($_.IndexOf('"')+1).Split('"')[0]
+        [pscustomobject]@{
+            IP = $ip
+            Date = $date
+            Status = $status
+            Substatus = $substatus
+            Method = $method
+            Uri = $uri
+            BytesSent = $bytesSent
+            BytesReceived = $bytesReceived
+            UserAgent = $userAgent
+        }
+    }
