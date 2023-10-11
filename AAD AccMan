@@ -1,0 +1,246 @@
+#How to manage Azure AD users and groups with PowerShell
+#The AzureAD module and the Azure Az module use different naming conventions for their cmdlets. The AzureAD module cmdlets usually contain AzureAD, such as Get-AzureADUser. In the Azure Az module, most cmdlets have Az in the cmdlet name, such as Get-AzADUser.
+#To get user or group information with PowerShell 5, use the AzureAD module and the Get-AzureADUser and Get-AzureADGroup cmdlets.
+
+> get-AzureADuser -SearchString "Mike"
+
+#Use PowerShell 5 and the AzureAD module to search for a particular user.
+
+> get-AzureADGroup -SearchString "test"
+
+#PowerShell 5 Azure AD group search
+#Use PowerShell 5 and the AzureAD module to search for a particular group.
+#The following examples show how to execute the same tasks in PowerShell 7 with the Azure Az module. First, to search for a user:
+
+> get-azaduser -StartsWith "mike" | ft
+
+#PowerShell 7 Azure AD user search
+#Use PowerShell 7 and the Azure Az module to search for a particular user.
+#To search for an Azure AD group with PowerShell 7 and the Azure Az module:
+
+> get-azadgroup -DisplayNameStartsWith "test" | Select DisplayName, ID | ft
+
+#PowerShell 7 Azure AD group search
+#Use PowerShell 7 and the Azure Az module to search for a particular group in Azure AD.
+#The syntax to retrieve multiple users depends on your search syntax. The following example finds five users and saves them to a variable named $PS5Users with the AzureAD module and PowerShell 5:
+
+> Get-AzureADUser -top 5 -OutVariable PS5Users
+
+#The PowerShell 7 and Azure Az module example uses nearly identical syntax:
+
+> Get-AZADUser -First 5 -OutVariable PS7users | ft
+
+#Making bulk user changes to a group with the AzureAD module
+#Adding users in bulk to a group is not as straightforward because the Azure AD cmdlets don't always support names; they rely on object IDs. All objects have a unique object ID that identifies them in the Azure cloud. The object ID is a global unique identifier (GUID) similar in concept to a security identifier (SID) in Active Directory. Look at this example using the AzureAD module:
+
+# Let's get some user info about Mike
+
+> Get-AzureAduser -SearchString "Mike" | select DisplayName, UserPrincipalName, ObjectID | Format-List
+
+# Get information about the group named "TestGroup2"
+
+> get-azureadgroup -SearchString Testgroup2
+
+#AzureAD module group object ID
+#Find a group's object ID with the AzureAD module and PowerShell 5.
+#The object ID and the group are required to add a user to the group.
+
+# Adding a user to the testgroup using AzureAD module
+
+> Add-AzureADGroupMember -ObjectId b0809a18-7358-4920-ab7a-1f3cffc7e5a3 - RefObjectId 064d910d-52fd-4711-a2f2-bcc09749a6fa
+
+#Working with object IDs can be confusing and difficult because it's hard to track down when errors occur, but using variables can reduce these complications and make code more readable. Here's the same exercise but with variables.
+
+#let's find our user and save to a variable named $Mike
+
+>$Mike  = Get-AzureADUser -SearchString Mike
+
+#let's look up our group and save to a variable
+>$Group = Get-AzureADGroup -SearchString Testgroup2
+
+#now let's add our user to the group using variables
+
+> Add-AzureADGroupMember -ObjectId $Group.ObjectId -RefObjectId $Mike.ObjectId
+
+#We get the same result, but this syntax is easier to read and troubleshoot. Note that these cmdlets do not generate output; you'll need to write extra code to get verbose results.
+
+#How to make bulk changes to a group with the Azure Az module
+#The following example adds a user to a group using PowerShell 7 and the Azure Az module, which is a little more forgiving and doesn't require object IDs.
+
+> Get-AzADUser -StartsWith casey | Select-Object UserPrincipalName, Displayname, AccountEnabled | Format-Table
+
+#Azure Az module user search
+#The object ID isn't necessary when searching for an Azure AD user with PowerShell 7 and the Azure Az module.
+#The following example shows how to add a single user to an Azure AD group with PowerShell 7 and the Azure Az module.
+
+> Add-AzADGroupMember -MemberUserPrincipalName "CHarrell@mkanakosgmail.onmicrosoft.com" -TargetGroupDisplayName "testgroup"
+
+#But what about adding more than one user to a group? The AzureAD module doesn't allow you to add multiple users at once, so use a loop to bulk-add the users:
+
+# Get the group info
+
+> Get-AzureADGroup -SearchString psv5testgroup -OutVariable testgroup
+
+ObjectId                               DisplayName  Description
+--------                            -----------  -----------
+49e17acf-792c-4ac1-bf0e-562e22418012 PSv5TestGroup Test Group for PSv5
+
+# How many are in the group now?
+> (Get-AzureADGroupMember -ObjectId $testgroup.objectid).count
+0
+
+# let's get some users to add to a group
+ >$users = Get-AzureADUser -top 10
+
+# now let's add them to the group! PowerShell pipeline support saves the day!
+> $users | ForEach-Object {Add-AzureADGroupMember -ObjectId $testgroup.object
+id -RefObjectId $_.objectid}
+
+# How many users are in that group now?
+  > (Get-AzureADGroupMember -ObjectId $testgroup.objectid).count
+10
+
+#The one line of code that added users to a group starts by saving users to a variable called $Users. Next, the PowerShell pipeline passed the $Users variable to the Foreach-Object cmdlet, which then iterated through the list of users and performed the task outlined between the { } brackets.
+
+#The process using the Azure Az module is similar but easier:
+
+#Get the group info
+
+>(Get-AzADGroup -DisplayName "psv7testgroup" -OutVariable testgroup2 | Select DisplayName, ID
+
+DisplayName   Id
+-----------  --
+psv7testgroup 8d4984b7-6ebd-4622-9464-25273a982076
+
+
+# How many are in the group now?
+>(Get-AzADGroupMember -GroupDisplayName $testgroup2.DisplayName).count
+0
+
+# get a list of users
+$users = Get-AzAduser -First 6
+
+# Let's add them to the group
+> Add-AzADGroupMember -TargetGroupDisplayName $testgroup2.DisplayName-
+MemberUserPrincipalName $users.UserPrincipalName
+
+# How many are in the group now?
+>Get-AzADGroupMember -GroupDisplayName $testgroup2.DisplayName).count
+6
+The following example shows how to remove a user from a group with PowerShell 5 and the AzureAD module.
+
+#how many people are in the group?
+>Get-AzureADGroupMember -ObjectId $testgroup.objectid).count
+10
+
+# Remove user from the group
+>Remove-AzureADGroupMember -ObjectId $testgroup.objectid -MemberId 
+$Casey.objectID
+
+#Group member count after user removal
+>(Get-AzureADGroupMember -ObjectId $testgroup.objectid).count
+9
+Here's the same task using PowerShell 7 and the Azure Az module:
+
+# get our user info
+>$CaseyV7 =  Get-AzAdUser -StartsWith "casey"
+
+#Get group count
+>(Get-AzADGroupMember -GroupDisplayName $testgroup2.DisplayName).count
+6
+
+# Remove Casey from group
+Remove-AzADGroupMember -GroupDisplayName $testgroup2.DisplayName - 
+MemberUserPrincipalName $caseyv7.UserPrincipalName
+
+>(Get-AzADGroupMember -GroupDisplayName $testgroup2.DisplayName).count
+5
+How to remove users from a group in bulk
+Removing users in bulk uses a similar process to the previous examples. The following code uses the AzureAD module:
+
+# Users currently in group
+> Get-AzureADGroupMember -ObjectId $testgroup.objectid | Select-Object DisplayName
+DisplayName
+-----------
+Jeremy Brown
+Giada Webb
+Hailey Serrano
+Harper Evans
+Mercedes Beck
+Casey Harrell
+Cullen Blair
+Ivan Pineda
+Itzel Riley
+Cedric Bauer
+#PowerShell 5 doesn't allow us to pass in more than one group member at a time. So we use the Foreach-Object cmdlet to help us out.
+> $users | Remove-AzureADGroupMember -ObjectId -MemberId $_.objectid
+
+# verify no one is in the group
+> (Get-AzureADGroupMember -ObjectId $testgroup.objectid).count
+0
+#To remove users in bulk with the Azure Az module:
+
+# get a list of users to remove
+> $Usersv7 = Get-AzADGroupMember -GroupDisplayName $testgroup2.DisplayName
+> $userv7.count
+5
+
+# Remove the users!
+> Remove-AzADGroupMember -GroupDisplayName $testgroup2.DisplayName - 
+MemberObjectId $Usersv7.Id
+
+> (Get-AzADGroupMember -GroupDisplayName $testgroup2.DisplayName.count
+0
+
+#How to get group memberships for a user in Azure AD
+#You can get group memberships for a user as well. The next two examples will highlight why PowerShell and Azure can befuddle admins from time to time.
+
+#First, let's get the group membership for a user with the AzureAD module:
+
+# Not sure what the cmdlet is? Use Get-Command! 
+>Get-Command -name *membership* -Module azureAD
+
+CommandType    Name                                                Version   
+Source
+-----------                ----                                                     -------
+------
+Cmdlet         Add-AzureADMSScopedRoleMembership                  2.0.2.140  
+AzureAD 
+Cmdlet         Get-AzureADContactMembership                        2.0.2.140 
+AzureAD
+Cmdlet         Get-AzureADMSScopedRoleMembership                 2.0.2.140  
+AzureAD
+Cmdlet         Get-AzureADServicePrincipalMembership              2.0.2.140  
+AzureAD
+Cmdlet         Get-AzureADUserMembership                          2.0.2.140  
+AzureAD
+Cmdlet         Remove-AzureADMSScopedRoleMembership                2.0.2.140  
+AzureAD
+
+# Get Casey's group membership
+> Get-AzureADUserMembership -ObjectId $casey.ObjectId
+ObjectId                            DisplayName Description
+--------                            ----------- -----------
+e610066b-daea-4ca9-9eb8-0cfb8367797f TestUsers   Testusers
+fa094711-6883-41d8-b3a6-040607faace9 TestGroup
+Next, here's how to get the group membership for a user with the Azure Az module.
+
+# Let's find the cmdlet using Get-Command
+> Get-Command -Name  *member* -Module  Az.Accounts
+
+#The results will show no cmdlet, so try checking the other Azure Az module (Az.Resources):
+
+# Search for cmdlets with the phrase "member" in the name
+> Get-Command-Name *member* -Module Az.Resources
+CommandType    Name                                            Version    
+Source 
+-------------------      --------                                             ---------       
+--------- 
+Cmdlet                  Add-AzADGroupMember               4.4.1      
+Az.Resources
+Cmdlet                  Get-AzADGroupMember                4.4.1      
+Az.Resources
+Cmdlet                  Remove-AzADGroupMember             4.4.1      
+Az.Resources 
+
+#The results will show there is no cmdlet in the Azure Az module to look up the group membership for a user. Even though the Azure Az module is easier to use, it doesn't have a cmdlet to do every type of task.
