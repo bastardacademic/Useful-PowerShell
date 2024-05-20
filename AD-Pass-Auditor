@@ -1,0 +1,31 @@
+# Import DSInternals module. You may need to install it via 'Install-Module DSInternals' if it's not already installed.
+Import-Module DSInternals
+
+# This function checks a list of common passwords against AD accounts.
+function Audit-ADPasswords {
+    param(
+        [string]$DomainController, # Specify the domain controller
+        [string]$PasswordListPath  # Path to a text file containing common passwords
+    )
+
+    # Ensure the password file exists
+    if (-not (Test-Path $PasswordListPath)) {
+        Write-Error "Password list file does not exist at the path: $PasswordListPath"
+        return
+    }
+
+    # Read passwords from the file
+    $commonPasswords = Get-Content $PasswordListPath
+
+    # Fetch domain information
+    $domain = Get-ADDomain -Server $DomainController
+
+    # Test each password against all users in the domain
+    foreach ($password in $commonPasswords) {
+        Write-Host "Testing password: $password"
+        Get-ADReplAccount -All -Server $DomainController | Test-PasswordQuality -WeakPasswordHashes (ConvertTo-NTHash $password) -SkipExpired -SkipDisabledAccounts | Format-Table AccountName, WeakPassword
+    }
+}
+
+# Example usage:
+# Audit-ADPasswords -DomainController "YourDC" -PasswordListPath "C:\path\to\commonpasswords.txt"
