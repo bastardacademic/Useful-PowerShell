@@ -1,5 +1,26 @@
-#Log Analysis:
-#Filter event logs by source and time:
+# Log analysis script
+Import-Module ActiveDirectory
 
-Get-EventLog -LogName Security -After "02/01/2023 00:00:00" -Before "02/24/2023 23:59:59" -Source "Microsoft Windows security auditing" | Format-Table TimeGenerated, EntryType, Source, EventID, Message -AutoSize
+# Function to analyze event logs
+function Analyze-EventLogs {
+    param(
+        [string]$ComputerName,
+        [string]$LogName = "Security"
+    )
 
+    # Check if the computer is online
+    if (Test-Connection -ComputerName $ComputerName -Count 1 -Quiet) {
+        # Get event logs from the remote computer
+        $logs = Invoke-Command -ComputerName $ComputerName -ScriptBlock {
+            Get-EventLog -LogName $using:LogName -Newest 100
+        }
+        return $logs
+    } else {
+        Write-Warning "Computer $ComputerName is not reachable."
+        return $null
+    }
+}
+
+# Example usage:
+# $logs = Analyze-EventLogs -ComputerName "Computer1" -LogName "Application"
+# $logs | Format-Table -Property EventID, Source, Message
